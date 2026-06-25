@@ -1,0 +1,336 @@
+"use client";
+
+import { Suspense, useActionState, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Reveal } from "../_components/reveal";
+import { ArrowRight, Check, Google, Lock, Sms, Eye, EyeOff } from "../_components/icons";
+import {
+  signInWithPassword,
+  requestMagicLink,
+  type SignInState,
+} from "../(app)/sign-in-actions";
+import { authClient } from "@/lib/auth-client";
+
+const initial: SignInState = null;
+
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<SignInSkeleton />}>
+      <SignInInner />
+    </Suspense>
+  );
+}
+
+function SignInSkeleton() {
+  // Minimal skeleton rendered while useSearchParams() resolves — keeps
+  // the page eligible for static generation.
+  return (
+    <div className="min-h-[calc(100vh-4rem)] grid lg:grid-cols-2">
+      <div className="hidden lg:flex flex-col justify-between p-10 lg:p-14 bg-paper-2 border-r border-line relative overflow-hidden" />
+      <div className="flex items-center justify-center p-6 sm:p-10 lg:p-14">
+        <div className="w-full max-w-md">
+          <Card className="border-line bg-card">
+            <CardContent className="p-7 sm:p-9">
+              <p className="eyebrow text-ink-3">Sign in</p>
+              <h2 className="font-display text-3xl text-ink mt-2">Welcome back</h2>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SignInInner() {
+  const searchParams = useSearchParams();
+  const next = searchParams?.get("next") ?? "";
+  const [state, action, pending] = useActionState(signInWithPassword, initial);
+  const [magicState, magicAction, magicPending] = useActionState(
+    requestMagicLink,
+    initial,
+  );
+  const [showPassword, setShowPassword] = useState(false);
+  const [googleBusy, setGoogleBusy] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
+
+  async function onGoogle() {
+    setGoogleError(null);
+    setGoogleBusy(true);
+    try {
+      await authClient.signIn.social({
+        provider: "google",
+        callbackURL: next || "/items",
+      });
+    } catch {
+      setGoogleError("Google sign-in isn't configured for this demo.");
+      setGoogleBusy(false);
+    }
+  }
+
+  const showMagicSent = magicState?.ok === true;
+
+  return (
+    <div className="min-h-[calc(100vh-4rem)] grid lg:grid-cols-2">
+      {/* Left: brand panel */}
+      <div className="hidden lg:flex flex-col justify-between p-10 lg:p-14 bg-paper-2 border-r border-line relative overflow-hidden">
+        <Link
+          href="/"
+          className="font-display text-2xl text-ink tracking-tight hover:opacity-80 transition-opacity"
+        >
+          Keepwise<span className="text-amber">.</span>
+        </Link>
+
+        <Reveal>
+          <div className="max-w-md">
+            <p className="eyebrow text-amber">Welcome back</p>
+            <h1 className="font-display text-5xl text-ink leading-[1.05] mt-3">
+              Pick up where you left off.
+            </h1>
+            <p className="text-base text-ink-2 mt-4 leading-relaxed">
+              Your household&apos;s receipts, deadlines, and alerts are waiting.
+              Keepwise reads what you bought, infers when to act, and tells you
+              only when it matters.
+            </p>
+
+            <ul className="mt-8 space-y-3">
+              {[
+                "Snap a receipt, get the deadline inferred.",
+                "Household-shared — no more lost warranties.",
+                "Quiet by default. We ask before we nag.",
+              ].map((line) => (
+                <li key={line} className="flex items-start gap-3 text-sm text-ink-2">
+                  <span className="mt-0.5 size-5 rounded-full bg-amber-soft/60 text-amber inline-flex items-center justify-center shrink-0">
+                    <Check size={12} />
+                  </span>
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </Reveal>
+
+        <p className="text-[11px] text-ink-3 tracking-[0.04em]">
+          Keepwise · A quiet way to keep what you bought
+        </p>
+
+        {/* Decorative receipts */}
+        <div className="absolute -right-20 top-1/2 -translate-y-1/2 opacity-60 pointer-events-none">
+          <div className="receipt p-4 w-[180px] -rotate-12 animate-float-y">
+            <p className="text-[9px] tracking-[0.2em] text-ink-3 uppercase text-center">
+              Allbirds
+            </p>
+            <div className="my-2 border-t border-dashed border-line" />
+            <div className="text-[10px] text-ink space-y-1">
+              <div className="flex justify-between"><span>Tree Runner</span><span>$110</span></div>
+              <div className="flex justify-between"><span>Wool Lounger</span><span>$95</span></div>
+            </div>
+            <div className="my-2 border-t border-dashed border-line" />
+            <div className="flex justify-between text-[10px] font-semibold text-ink">
+              <span>Total</span>
+              <span>$205</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Right: form */}
+      <div className="flex items-center justify-center p-6 sm:p-10 lg:p-14">
+        <Reveal delay={60} className="w-full max-w-md">
+          <div className="lg:hidden mb-8">
+            <Link
+              href="/"
+              className="font-display text-2xl text-ink tracking-tight hover:opacity-80 transition-opacity"
+            >
+              Keepwise<span className="text-amber">.</span>
+            </Link>
+          </div>
+
+          <Card className="border-line bg-card">
+            <CardContent className="p-7 sm:p-9">
+              <p className="eyebrow text-ink-3">Sign in</p>
+              <h2 className="font-display text-3xl text-ink mt-2">
+                {showMagicSent ? "Check your inbox" : "Welcome back"}
+              </h2>
+              <p className="text-sm text-ink-2 mt-2">
+                {showMagicSent
+                  ? "We sent you a magic link. It expires in 10 minutes."
+                  : "Sign in with email and password."}
+              </p>
+
+              {showMagicSent ? (
+                <div className="mt-7 space-y-4">
+                  <div className="rounded-lg border border-moss/30 bg-moss/5 p-4 flex items-start gap-3">
+                    <Check size={16} className="text-moss mt-0.5 shrink-0" />
+                    <div>
+                      <p className="text-sm text-foreground">Magic link sent</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Click the link in the email to finish signing in.
+                        Didn&apos;t get it? Check spam or try a different
+                        address.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    onClick={() => magicAction(new FormData())}
+                    className="w-full rounded-full text-ink-2 hover:bg-muted"
+                  >
+                    Use a different email
+                  </Button>
+                </div>
+              ) : (
+                <form action={action} className="mt-7 space-y-4">
+                  {next && (
+                    <input type="hidden" name="next" value={next} />
+                  )}
+                  <div>
+                    <Label htmlFor="email" className="eyebrow text-ink-3">
+                      Email
+                    </Label>
+                    <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background focus-within:border-ink transition-colors">
+                      <Sms size={14} className="text-ink-3" />
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        placeholder="you@example.com"
+                        className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="password" className="eyebrow text-ink-3">
+                      Password
+                    </Label>
+                    <div className="mt-1.5 flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-background focus-within:border-ink transition-colors">
+                      <Lock size={14} className="text-ink-3" />
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        minLength={8}
+                        autoComplete="current-password"
+                        placeholder="••••••••"
+                        className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword((s) => !s)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        className="text-ink-3 hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff size={14} /> : <Eye size={14} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {state?.error && (
+                    <p className="text-xs text-[hsl(0_56%_39%)]">{state.error}</p>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={pending}
+                    className="w-full rounded-full bg-ink text-paper hover:bg-ink/90"
+                  >
+                    {pending ? (
+                      <>
+                        <span className="inline-block size-3 rounded-full border-2 border-paper/30 border-t-paper animate-spin" />
+                        Signing in…
+                      </>
+                    ) : (
+                      <>
+                        Sign in
+                        <ArrowRight size={14} />
+                      </>
+                    )}
+                  </Button>
+
+                  <div className="flex items-center gap-3 my-2">
+                    <Separator className="flex-1" />
+                    <span className="text-[11px] text-muted-foreground tracking-[0.12em] uppercase">or</span>
+                    <Separator className="flex-1" />
+                  </div>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={googleBusy}
+                    onClick={onGoogle}
+                    className="w-full rounded-full border-line bg-background hover:bg-muted"
+                  >
+                    <Google size={14} />
+                    {googleBusy ? "Opening Google…" : "Continue with Google"}
+                  </Button>
+
+                  {googleError && (
+                    <p className="text-xs text-[hsl(0_56%_39%)]">{googleError}</p>
+                  )}
+
+                  <div className="flex items-center gap-3 my-2">
+                    <Separator className="flex-1" />
+                    <span className="text-[11px] text-muted-foreground tracking-[0.12em] uppercase">or</span>
+                    <Separator className="flex-1" />
+                  </div>
+
+                  <form action={magicAction} className="space-y-2">
+                    <div>
+                      <Label htmlFor="magic-email" className="eyebrow text-ink-3">
+                        Email me a magic link
+                      </Label>
+                      <input
+                        id="magic-email"
+                        name="email"
+                        type="email"
+                        required
+                        placeholder="you@example.com"
+                        className="mt-1.5 w-full px-3 py-2 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground outline-none focus:border-ink transition-colors"
+                      />
+                    </div>
+                    {magicState?.error && (
+                      <p className="text-xs text-[hsl(0_56%_39%)]">{magicState.error}</p>
+                    )}
+                    <Button
+                      type="submit"
+                      variant="ghost"
+                      disabled={magicPending}
+                      className="w-full rounded-full text-ink-2 hover:bg-muted"
+                    >
+                      {magicPending ? "Sending…" : "Send magic link"}
+                    </Button>
+                  </form>
+
+                  <p className="text-xs text-muted-foreground text-center mt-4">
+                    <Lock size={11} className="inline-block mr-1 -mt-0.5" />
+                    Sessions expire after 7 days of inactivity.
+                  </p>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+
+          <p className="text-[11px] text-muted-foreground text-center mt-8 leading-relaxed">
+            By continuing you agree to our{" "}
+            <Link href="/terms" className="underline underline-offset-2 hover:text-foreground">
+              Terms
+            </Link>{" "}
+            and{" "}
+            <Link href="/privacy" className="underline underline-offset-2 hover:text-foreground">
+              Privacy Policy
+            </Link>
+            .
+          </p>
+        </Reveal>
+      </div>
+    </div>
+  );
+}

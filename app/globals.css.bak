@@ -14,36 +14,6 @@
   --amber-soft: #f5d28a;   /* amber wash for backgrounds */
   --rose: #9b2c2c;         /* expired — used sparingly */
   --moss: #2f5d3a;         /* covered / healthy */
-  --white: #ffffff;
-}
-
-/* ─── shadcn theme variables ─────────────────────────────────────────────── */
-/* HSL channels so shadcn components (which use `bg-primary` etc.) read
- * the same paper palette. Keep names aligned with shadcn's defaults so
- * installed components don't fight the system. */
-:root {
-  --background: 38 44% 96%;          /* paper */
-  --foreground: 40 7% 9%;            /* ink */
-  --card: 0 0% 100%;
-  --card-foreground: 40 7% 9%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 40 7% 9%;
-  --primary: 40 7% 9%;               /* ink — same as foreground, semantic */
-  --primary-foreground: 38 44% 96%;  /* paper */
-  --secondary: 39 37% 93%;           /* paper-2 */
-  --secondary-foreground: 40 7% 9%;
-  --muted: 39 37% 93%;
-  --muted-foreground: 38 8% 27%;
-  --accent: 41 37% 88%;              /* paper-3 */
-  --accent-foreground: 40 7% 9%;
-  --destructive: 0 56% 39%;          /* rose */
-  --border: 42 23% 81%;              /* line */
-  --input: 42 23% 81%;
-  --ring: 26 90% 37%;                /* amber */
-  --radius: 0.625rem;
-  --chart-1: 26 90% 37%;
-  --chart-2: 134 33% 27%;
-  --chart-3: 0 56% 39%;
 }
 
 /* ─── Tailwind theme bridge ──────────────────────────────────────────────── */
@@ -151,12 +121,8 @@ pre {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
   }
-  .reveal { opacity: 1 !important; transform: none !important; }
-  .receipt-hero { animation: none !important; }
 }
 
 /* ─── Focus rings — visible, on-brand ────────────────────────────────────── */
@@ -164,84 +130,4 @@ pre {
   outline: 2px solid var(--amber);
   outline-offset: 2px;
   border-radius: 4px;
-}
-
-/* ─── Animation system ──────────────────────────────────────────────────── */
-/* .reveal is a scroll-triggered wrapper. Add the .is-revealed class via
- * the <Reveal> client component (IntersectionObserver) and the element
- * transitions in from translateY(20px) + opacity 0 to its final position. */
-.reveal {
-  opacity: 0;
-  transform: translateY(20px);
-  transition:
-    opacity 600ms cubic-bezier(0.22, 0.61, 0.36, 1),
-    transform 600ms cubic-bezier(0.22, 0.61, 0.36, 1);
-  will-change: opacity, transform;
-}
-.reveal.is-revealed {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-/* Hero receipt collage — staggered entrance for the three receipt cards. */
-@keyframes rise-in {
-  from { opacity: 0; transform: translateY(24px) rotate(var(--tilt, 0deg)); }
-  to   { opacity: 1; transform: translateY(0) rotate(var(--tilt, 0deg)); }
-}
-.receipt-hero {
-  animation: rise-in 700ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
-}
-.receipt-hero:nth-child(1) { animation-delay: 60ms; }
-.receipt-hero:nth-child(2) { animation-delay: 200ms; }
-.receipt-hero:nth-child(3) { animation-delay: 340ms; }
-
-/* Idle float, kicks in when the user hovers the receipt collage. */
-@keyframes float-y {
-  0%, 100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
-  50%      { transform: translateY(-8px) rotate(var(--tilt, 0deg)); }
-}
-.receipt-host:hover .receipt-hero {
-  animation: float-y 4s ease-in-out infinite;
-}
-.receipt-host:hover .receipt-hero:nth-child(2) {
-  animation-delay: -1.3s;
-}
-.receipt-host:hover .receipt-hero:nth-child(3) {
-  animation-delay: -2.6s;
-}
-
-/* Softer version of Tailwind's animate-ping for the "soon" status dot. */
-@keyframes ping-soft {
-  0%   { transform: scale(1);   opacity: 0.55; }
-  80%  { transform: scale(2.2); opacity: 0; }
-  100% { transform: scale(2.2); opacity: 0; }
-}
-.animate-ping-soft { animation: ping-soft 1.8s cubic-bezier(0, 0, 0.2, 1) infinite; }
-
-/* Shimmer for loading skeletons. */
-@keyframes shimmer {
-  0%   { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-}
-.shimmer {
-  background: linear-gradient(
-    90deg,
-    var(--paper-2) 0%,
-    var(--paper-3) 50%,
-    var(--paper-2) 100%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.4s linear infinite;
-}
-
-/* Subtle pulse used on the "act soon" eyebrow dot. */
-@keyframes pulse-soft {
-  0%, 100% { opacity: 1; }
-  50%      { opacity: 0.55; }
-}
-.animate-pulse-soft { animation: pulse-soft 2s ease-in-out infinite; }
-
-/* Draw-in stroke for hero icon hover. */
-@keyframes draw-stroke {
-  to { stroke-dashoffset: 0; }
 }

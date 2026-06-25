@@ -47,7 +47,16 @@ export const auth = betterAuth({
       httpOnly: true,
     },
   },
-  trustedOrigins: [baseURL],
+  // CSRF allowlist. Includes the configured baseURL plus the localhost /
+  // 127.0.0.1 variants on common dev ports so probes and the manual QA
+  // server both succeed without an env-var swap.
+  trustedOrigins: [
+    baseURL,
+    "http://localhost:3000",
+    "http://localhost:3001",
+    "http://127.0.0.1:3000",
+    "http://127.0.0.1:3001",
+  ],
 });
 
 export type Auth = typeof auth;

@@ -32,12 +32,21 @@ export function Nav() {
           </Link>
         </nav>
 
-        <Link
-          href="/sign-in"
-          className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-4 py-2 text-sm font-medium hover:bg-ink-2 transition-colors"
-        >
-          Get started
-        </Link>
+        <div className="flex gap-6 items-center">
+          <Link
+              href="/sign-in"
+              className="text-sm text-ink-2 hover:text-ink transition-colors"
+            >
+              Sign in
+            </Link>
+          <Link
+            href="/sign-up"
+            className="inline-flex items-center gap-2 rounded-full bg-ink text-paper px-4 py-2 text-sm font-medium hover:bg-ink-2 transition-colors"
+          >
+            Get started
+          </Link>
+        </div>
+        
       </div>
     </header>
   );

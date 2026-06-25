@@ -75,7 +75,7 @@ export default function Home() {
               reminds you before it&apos;s too late to act.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <CTA href="/sign-in" variant="primary" withArrow>
+              <CTA href="/sign-up" variant="primary" withArrow>
                 Start tracking free
               </CTA>
               <CTA href="#how-it-works" variant="ghost">

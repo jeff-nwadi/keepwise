@@ -14,6 +14,7 @@
 
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { nextCookies } from "better-auth/next-js";
 import { db } from "./db";
 import * as schema from "./db/schema";
 
@@ -57,6 +58,14 @@ export const auth = betterAuth({
     "http://127.0.0.1:3000",
     "http://127.0.0.1:3001",
   ],
+  // MUST be the last plugin in the array. It hooks into Better Auth's
+  // request lifecycle and forwards any Set-Cookie headers to Next's
+  // cookie jar so server actions (sign-in, sign-up, sign-out) actually
+  // persist the session cookie in the browser. Without this, the
+  // server action returns the cookie on a Better Auth APIResponse
+  // object that the action throws away — and the user lands on the
+  // next page with no cookie, gets bounced back to /sign-in.
+  plugins: [nextCookies()],
 });
 
 export type Auth = typeof auth;

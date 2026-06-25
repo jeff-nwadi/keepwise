@@ -1,8 +1,7 @@
 "use client";
 
-import { Suspense, useActionState, useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useActionState, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,30 +19,6 @@ import { authClient } from "@/lib/auth-client";
 const initial: SignInState = null;
 
 export default function SignInPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const next = searchParams?.get("next") ?? "";
-
-  const { data: session, isLoading } = useQuery({
-    queryKey: ["session"],
-    queryFn: async () => {
-      const sessionData = await authClient.getSession();
-      return sessionData?.data?.user ?? null;
-    },
-  });
-
-  if (isLoading) {
-    return (
-      <Suspense fallback={<SignInSkeleton />}>
-        <SignInInner />
-      </Suspense>
-    );
-  }
-
-  if (session) {
-    return <RedirectTo href={decodeURIComponent(next) || "/items"} />;
-  }
-
   return (
     <Suspense fallback={<SignInSkeleton />}>
       <SignInInner />
@@ -356,24 +331,4 @@ function SignInInner() {
       </div>
     </div>
   );
-}
-
-function RedirectTo({ href }: { href: string }) {
-  const router = useRouter();
-
-  const { data: session } = useQuery({
-    queryKey: ["redirect-check"],
-    queryFn: async () => {
-      const sessionData = await authClient.getSession();
-      return sessionData?.data?.user ?? null;
-    },
-  });
-
-  useEffect(() => {
-    if (session) {
-      router.push(href);
-    }
-  }, [session, router, href]);
-
-  return null;
 }

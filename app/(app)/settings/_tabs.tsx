@@ -17,15 +17,15 @@ import {
 } from "@/components/ui/tabs";
 import { StatusPill } from "../../_components/status-pill";
 import { type Item, formatDeadlineDate } from "../../_data/item-helpers";
+import type { Identity } from "@/lib/auth-helpers";
+import { SignOutButton } from "../../_components/sign-out-button";
 import {
   ArrowRight,
-  ArrowSquareRight,
   Bell,
   Check,
   Crown,
   Edit,
   Info,
-  Logout,
   People,
   Plus,
   Setting,
@@ -33,17 +33,37 @@ import {
   Warning,
 } from "../../_components/icons";
 
-const HOUSEHOLD = [
-  { id: "you", name: "You", email: "you@keepwise.app", role: "Owner", initial: "Y" },
-];
-
 const SCHEDULE_OPTIONS = [
   { id: "default", label: "7 days + 1 day before", note: "Recommended · covers the close-in window" },
   { id: "30day", label: "30 days before only", note: "Less noise, easier inbox" },
   { id: "custom", label: "Custom per item", note: "Override the schedule on individual receipts" },
 ];
 
-export function SettingsTabs({ items }: { items: Item[] }) {
+function roleLabel(role: Identity["role"]): string {
+  if (role === "owner") return "Owner";
+  if (role === "member") return "Member";
+  return "Member";
+}
+
+export function SettingsTabs({
+  items,
+  identity,
+}: {
+  items: Item[];
+  identity: Identity;
+}) {
+  // Single signed-in user is shown in the household list. The schema
+  // supports up to 5 members (Keepwise+), but until invites land we
+  // render only the caller. The "Invite member" button is disabled
+  // until the upgrade ships.
+  const householdName = identity.householdName ?? "Your household";
+  const memberInitial = identity.initials;
+  const memberName = identity.name || "You";
+  const memberEmail = identity.email;
+  const memberRole = roleLabel(identity.role);
+  const planName = identity.plan === "plus" ? "Plus" : "Free";
+  const planMaxItems = identity.plan === "plus" ? Infinity : 5;
+  const planMaxMembers = identity.plan === "plus" ? 5 : 1;
   return (
     <div className="mt-8">
       <Tabs defaultValue="household" className="w-full flex-col">
@@ -78,7 +98,7 @@ export function SettingsTabs({ items }: { items: Item[] }) {
               <CardContent className="p-6">
                 <p className="eyebrow text-ink-3">Household name</p>
                 <Input
-                  defaultValue="Our apartment"
+                  defaultValue={householdName}
                   className="mt-2 bg-background border-border"
                 />
                 <p className="text-[11px] text-muted-foreground mt-1.5">
@@ -99,27 +119,24 @@ export function SettingsTabs({ items }: { items: Item[] }) {
                   </Button>
                 </div>
                 <ul className="mt-3 space-y-2">
-                  {HOUSEHOLD.map((m) => (
-                    <li
-                      key={m.id}
-                      className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-line bg-background"
-                    >
-                      <Avatar className="size-9">
-                        <AvatarFallback className="bg-secondary text-foreground font-medium text-sm">
-                          {m.initial}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm text-foreground truncate">{m.name}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">
-                          {m.email}
-                        </p>
-                      </div>
-                      <Badge variant="secondary" className="rounded-full bg-muted text-muted-foreground">
-                        {m.role}
-                      </Badge>
-                    </li>
-                  ))}
+                  <li
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl border border-line bg-background"
+                  >
+                    <Avatar className="size-9">
+                      <AvatarFallback className="bg-secondary text-foreground font-medium text-sm">
+                        {memberInitial}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm text-foreground truncate">{memberName}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {memberEmail}
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="rounded-full bg-muted text-muted-foreground">
+                      {memberRole}
+                    </Badge>
+                  </li>
                 </ul>
                 <div className="mt-5 rounded-xl border border-amber/30 bg-amber-soft/40 p-4 flex items-start gap-3">
                   <Crown size={16} className="text-amber mt-0.5 shrink-0" />
@@ -142,12 +159,12 @@ export function SettingsTabs({ items }: { items: Item[] }) {
                   <div className="mt-3 flex items-center gap-3">
                     <Avatar className="size-12">
                       <AvatarFallback className="bg-secondary text-foreground font-medium">
-                        Y
+                        {memberInitial}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
-                      <p className="text-sm text-foreground truncate">You</p>
-                      <p className="text-[11px] text-muted-foreground truncate">you@keepwise.app</p>
+                      <p className="text-sm text-foreground truncate">{memberName}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{memberEmail}</p>
                     </div>
                   </div>
                   <Button
@@ -166,13 +183,9 @@ export function SettingsTabs({ items }: { items: Item[] }) {
                   <p className="text-xs text-muted-foreground mt-1.5">
                     End this session on this device. Receipts stay safe in your household.
                   </p>
-                  <Button asChild variant="ghost" size="sm" className="mt-4 w-full rounded-full text-ink-2 hover:bg-muted justify-start">
-                    <Link href="/sign-in">
-                      <Logout size={12} />
-                      Sign out
-                      <ArrowSquareRight size={12} className="ml-auto" />
-                    </Link>
-                  </Button>
+                  <div className="mt-4">
+                    <SignOutButton className="w-full justify-start rounded-full text-ink-2 hover:bg-muted px-3 py-1.5 inline-flex items-center gap-2 text-sm font-medium" />
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -342,10 +355,10 @@ export function SettingsTabs({ items }: { items: Item[] }) {
                   <div>
                     <p className="eyebrow text-ink-3">Current plan</p>
                     <p className="font-display text-3xl text-foreground mt-2">
-                      Free
+                      {planName}
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {items.length} of 5 items used · 1 member
+                      {items.length} of {planMaxItems === Infinity ? "∞" : planMaxItems} items used · 1 member
                     </p>
                   </div>
                   <Badge variant="secondary" className="rounded-full bg-muted text-muted-foreground">
@@ -357,8 +370,12 @@ export function SettingsTabs({ items }: { items: Item[] }) {
 
                 <p className="eyebrow text-ink-3">Usage</p>
                 <div className="mt-3 space-y-3">
-                  <UsageBar label="Items" used={items.length} max={5} />
-                  <UsageBar label="Members" used={1} max={1} />
+                  <UsageBar
+                    label="Items"
+                    used={items.length}
+                    max={planMaxItems === Infinity ? Math.max(items.length, 50) : planMaxItems}
+                  />
+                  <UsageBar label="Members" used={1} max={planMaxMembers} />
                   <UsageBar label="Alerts sent this month" used={12} max={50} />
                 </div>
 

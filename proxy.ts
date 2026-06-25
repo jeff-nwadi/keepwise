@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getSessionCookie } from "better-auth/cookies";
 
+
+
 const PROTECTED_PREFIXES = ["/items", "/upload", "/settings"];
 
 export function proxy(request: NextRequest) {

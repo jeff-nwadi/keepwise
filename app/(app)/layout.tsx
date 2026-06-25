@@ -1,59 +1,51 @@
 // (app) route group layout.
 //
-// Fetches the caller's session, household membership, and queued-alert
-// count on the server, then passes them to the shared AppShell. The
-// proxy at proxy.ts has already redirected unauthenticated requests to
-// /sign-in, so by the time this layout runs there is a valid session.
+// Single source of truth for the signed-in identity. Calls
+// currentIdentity() once, then passes the result to AppShell.
+//
+// The proxy at proxy.ts has already redirected truly anonymous requests
+// (no cookie) to /sign-in. If we land here with a cookie but
+// currentIdentity() returns no user, the cookie is stale (server-side
+// session was revoked or expired) — redirect to /sign-in. Better Auth
+// will overwrite the stale cookie when the user signs in fresh.
 //
 // The shell itself stays a server component — it never needs to react
-// to client state. Sign-out lives in a tiny client island below.
+// to client state. Sign-out lives in a tiny client island in the
+// avatar dropdown menu.
 
 import type { ReactNode } from "react";
-import { eq, and, count } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { AppShell } from "../_components/app-shell";
-import { currentSession } from "@/lib/auth-helpers";
-import { db } from "@/lib/db";
-import { alert, item, householdMember } from "@/lib/db/schema";
-
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "··";
-  if (parts.length === 1) return (parts[0]![0] ?? "·").toUpperCase();
-  return ((parts[0]![0] ?? "") + (parts[parts.length - 1]![0] ?? "")).toUpperCase();
-}
+import { currentIdentity } from "@/lib/auth-helpers";
+import { auth } from "@/lib/auth";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  const user = await currentSession();
-  let identity = {
-    initials: "··",
-    name: "",
-    email: "",
-    unreadCount: 0,
-  };
+  const identity = await currentIdentity();
 
-  if (user) {
-    identity = {
-      initials: initialsOf(user.name),
-      name: user.name,
-      email: user.email,
-      unreadCount: 0,
-    };
-
-    const [m] = await db
-      .select({ hid: householdMember.householdId })
-      .from(householdMember)
-      .where(eq(householdMember.userId, user.id))
-      .limit(1);
-
-    if (m) {
-      const rows = await db
-        .select({ n: count() })
-        .from(alert)
-        .innerJoin(item, eq(alert.itemId, item.id))
-        .where(and(eq(item.householdId, m.hid), eq(alert.status, "queued")));
-      identity.unreadCount = Number(rows[0]?.n ?? 0);
+  // Stale cookie: proxy let us through because the cookie shape was
+  // valid, but Better Auth's getSession returned nothing. Sign the
+  // stale session out server-side (clears the cookie on the response)
+  // and redirect to /sign-in.
+  if (!identity.userId) {
+    try {
+      await auth.api.signOut({ headers: await headers() });
+    } catch {
+      // Best effort. Redirect either way.
     }
+    redirect("/sign-in?next=%2Fitems");
   }
 
-  return <AppShell identity={identity}>{children}</AppShell>;
+  return (
+    <AppShell
+      identity={{
+        initials: identity.initials,
+        name: identity.name,
+        email: identity.email,
+        unreadCount: identity.unreadCount,
+      }}
+    >
+      {children}
+    </AppShell>
+  );
 }

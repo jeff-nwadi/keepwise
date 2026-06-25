@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Fraunces, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { QueryProvider } from "./_components/query-provider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -37,8 +36,8 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${fraunces.variable} ${mono.variable} antialiased`}
     >
-      <body className="min-h-screen bg-paper text-ink font-sans selection:bg-amber/30 selection:ink">
-        <QueryProvider>{children}</QueryProvider>
+      <body className="min-h-screen bg-paper text-ink font-sans selection:bg-amber/30 selection:text-ink">
+        {children}
       </body>
     </html>
   );

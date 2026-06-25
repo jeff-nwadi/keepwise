@@ -1,16 +1,18 @@
 // Settings page — server component shell that fetches the household's
-// items, then hands them to the client tabs island. The tabs component
-// owns all of the interactive state (channel toggles, radio selection,
-// etc.) but the data is server-rendered.
+// items and the signed-in identity, then hands them to the client tabs
+// island. The tabs component owns all of the interactive state (channel
+// toggles, radio selection, etc.) but the data is server-rendered.
 
 import { Reveal } from "../../_components/reveal";
 import { listItems, type Item } from "../../_data/items";
+import { currentIdentity } from "@/lib/auth-helpers";
 import { SettingsTabs } from "./_tabs";
 
 export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const items: Item[] = await listItems();
+  const identity = await currentIdentity();
   return (
     <div className="mx-auto max-w-5xl px-6 lg:px-10 py-10 lg:py-14">
       <Reveal>
@@ -25,7 +27,7 @@ export default async function SettingsPage() {
       </Reveal>
 
       <Reveal delay={80}>
-        <SettingsTabs items={items} />
+        <SettingsTabs items={items} identity={identity} />
       </Reveal>
     </div>
   );
